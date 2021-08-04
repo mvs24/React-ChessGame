@@ -4,6 +4,7 @@ interface Props {
   markup?: string;
   color: "white" | "black";
   onSquareClick?: (coordinates: number[]) => void;
+  onAvailableSquareClick?: (coordinates: number[]) => void;
   selected: boolean;
   isAvailableMove: boolean;
 }
@@ -17,10 +18,13 @@ function Square(props: Props) {
     coordinates,
     isAvailableMove,
     selected,
+    onAvailableSquareClick,
   } = props;
 
   const squareClickHandler = () => {
     if (!empty && onSquareClick) onSquareClick(coordinates);
+
+    if (empty && onAvailableSquareClick) onAvailableSquareClick(coordinates);
   };
 
   return (

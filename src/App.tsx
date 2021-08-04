@@ -35,6 +35,8 @@ const generatePieces = () => {
   board[7][3] = new Queen([7, 3], piecesString.whiteQueen, "white");
   board[7][4] = new King([7, 4], piecesString.whiteKing, "white");
 
+  for (let j = 2; j < 6; j++) board[j] = new Array(8).fill(undefined);
+
   return board;
 };
 
@@ -61,9 +63,6 @@ const getSquareColor: (row: number, col: number) => "white" | "black" = (
 function App() {
   const [boardPieces, setBoardPieces] = useState<Piece[][]>(generatePieces());
   const [turn, setTurn] = useState<"white" | "black">("white");
-  const [selectedSquare, setSelectedSquare] = useState<number[] | undefined>(
-    undefined
-  );
   const [selectedPiece, setSelectedPiece] = useState<Piece | undefined>(
     undefined
   );
@@ -82,16 +81,47 @@ function App() {
     [availableMoves]
   );
 
-  const isValidSelectedPiece = useCallback((selectedPiece: Piece) => {
-    if (selectedPiece === undefined) {
-    }
+  const isValidSelectedPiece = useCallback(
+    (selectedPiece: Piece) => {
+      if (selectedPiece === undefined) {
+      }
 
-    if (turn === "white") {
-      return selectedPiece.color === "white";
-    } else {
-      return selectedPiece.color === "black";
-    }
-  }, []);
+      if (turn === "white") {
+        return selectedPiece.color === "white";
+      } else {
+        return selectedPiece.color === "black";
+      }
+    },
+    [turn]
+  );
+
+  const changeTurn = () => {
+    setTurn(turn === "white" ? "black" : "white");
+  };
+
+  const onAvailableSquareClick = (coordinates: number[]) => {
+    if (!selectedPiece) return;
+
+    const [nextRow, nextColumn] = coordinates;
+
+    if (!isAvailableMove(nextRow, nextColumn)) return;
+
+    const selectedPieceRow = selectedPiece.row;
+    const selectedPieceColumn = selectedPiece.column;
+
+    const updatedBoardPieces = [...boardPieces];
+    // @ts-ignore
+    updatedBoardPieces[selectedPieceRow][selectedPieceColumn] = undefined;
+    updatedBoardPieces[nextRow][nextColumn] = selectedPiece;
+
+    // @ts-ignore
+    selectedPiece.setCoordinates([nextRow, nextColumn]);
+
+    setBoardPieces(updatedBoardPieces);
+    setAvailableMoves(undefined);
+    setSelectedPiece(undefined);
+    changeTurn();
+  };
 
   const onSquareClick = (coordinates: number[]) => {
     const [row, column] = coordinates;
@@ -114,27 +144,16 @@ function App() {
     const boardToRender: { coordinates: number[]; Element: React.FC }[] = [];
 
     for (let row = 0; row < boardPieces.length; row++) {
-      if (boardPieces[row].length === 0) {
-        for (let i = 0; i < 8; i++) {
-          boardToRender.push({
-            coordinates: [row, i],
-            Element: () => (
-              <Square
-                isAvailableMove={isAvailableMove(row, i)}
-                selected={false}
-                color={getSquareColor(row, i)}
-                coordinates={[row, i]}
-                empty
-              />
-            ),
-          });
-        }
-      }
       for (let col = 0; col < boardPieces[row].length; col++) {
         boardToRender.push({
           coordinates: [row, col],
           Element: () => (
             <Square
+              onAvailableSquareClick={(coordinates: number[]) =>
+                boardPieces[row][col] === undefined
+                  ? onAvailableSquareClick(coordinates)
+                  : undefined
+              }
               isAvailableMove={isAvailableMove(row, col)}
               selected={
                 !selectedPiece
@@ -143,8 +162,8 @@ function App() {
               }
               onSquareClick={onSquareClick}
               color={getSquareColor(row, col)}
-              markup={boardPieces[row][col].markup}
-              empty={false}
+              markup={boardPieces[row][col] && boardPieces[row][col].markup}
+              empty={boardPieces[row][col] === undefined}
               coordinates={[row, col]}
             />
           ),
