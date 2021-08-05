@@ -131,7 +131,7 @@ function App() {
       setSelectedPiece(selectedPiece);
 
       // @ts-ignore
-      const availableMoves = selectedPiece.getAvailableMoves();
+      const availableMoves = selectedPiece.getAvailableMoves(boardPieces);
       setAvailableMoves(availableMoves);
     } else {
       setTimeout(() => {
