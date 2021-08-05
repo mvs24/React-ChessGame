@@ -95,50 +95,56 @@ function App() {
     [turn]
   );
 
-  const changeTurn = () => {
+  const changeTurn = useCallback(() => {
     setTurn(turn === "white" ? "black" : "white");
-  };
+  }, [turn]);
 
-  const onAvailableSquareClick = (coordinates: number[]) => {
-    if (!selectedPiece) return;
+  const onAvailableSquareClick = useCallback(
+    (coordinates: number[]) => {
+      if (!selectedPiece) return;
 
-    const [nextRow, nextColumn] = coordinates;
+      const [nextRow, nextColumn] = coordinates;
 
-    if (!isAvailableMove(nextRow, nextColumn)) return;
+      if (!isAvailableMove(nextRow, nextColumn)) return;
 
-    const selectedPieceRow = selectedPiece.row;
-    const selectedPieceColumn = selectedPiece.column;
+      const selectedPieceRow = selectedPiece.row;
+      const selectedPieceColumn = selectedPiece.column;
 
-    const updatedBoardPieces = [...boardPieces];
-    // @ts-ignore
-    updatedBoardPieces[selectedPieceRow][selectedPieceColumn] = undefined;
-    updatedBoardPieces[nextRow][nextColumn] = selectedPiece;
-
-    // @ts-ignore
-    selectedPiece.setCoordinates([nextRow, nextColumn]);
-
-    setBoardPieces(updatedBoardPieces);
-    setAvailableMoves(undefined);
-    setSelectedPiece(undefined);
-    changeTurn();
-  };
-
-  const onSquareClick = (coordinates: number[]) => {
-    const [row, column] = coordinates;
-    const selectedPiece = boardPieces[row][column];
-
-    if (isValidSelectedPiece(selectedPiece)) {
-      setSelectedPiece(selectedPiece);
+      const updatedBoardPieces = [...boardPieces];
+      // @ts-ignore
+      updatedBoardPieces[selectedPieceRow][selectedPieceColumn] = undefined;
+      updatedBoardPieces[nextRow][nextColumn] = selectedPiece;
 
       // @ts-ignore
-      const availableMoves = selectedPiece.getAvailableMoves(boardPieces);
-      setAvailableMoves(availableMoves);
-    } else {
-      setTimeout(() => {
-        alert("Not access for that piece");
-      });
-    }
-  };
+      selectedPiece.setCoordinates([nextRow, nextColumn]);
+
+      setBoardPieces(updatedBoardPieces);
+      setAvailableMoves(undefined);
+      setSelectedPiece(undefined);
+      changeTurn();
+    },
+    [isAvailableMove, selectedPiece, boardPieces, changeTurn]
+  );
+
+  const onSquareClick = useCallback(
+    (coordinates: number[]) => {
+      const [row, column] = coordinates;
+      const selectedPiece = boardPieces[row][column];
+
+      if (isValidSelectedPiece(selectedPiece)) {
+        setSelectedPiece(selectedPiece);
+
+        // @ts-ignore
+        const availableMoves = selectedPiece.getAvailableMoves(boardPieces);
+        setAvailableMoves(availableMoves);
+      } else {
+        setTimeout(() => {
+          alert("Not access for that piece");
+        });
+      }
+    },
+    [boardPieces, isValidSelectedPiece]
+  );
 
   const renderBoard = useCallback(() => {
     const boardToRender: { coordinates: number[]; Element: React.FC }[] = [];
@@ -172,7 +178,13 @@ function App() {
     }
 
     return boardToRender;
-  }, [boardPieces, selectedPiece, isAvailableMove]);
+  }, [
+    boardPieces,
+    selectedPiece,
+    isAvailableMove,
+    onAvailableSquareClick,
+    onSquareClick,
+  ]);
 
   return (
     <div className="App">
