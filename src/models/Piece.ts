@@ -26,54 +26,6 @@ export abstract class Piece {
     this.setRowAndColumn();
   }
 
-  getWhitePiecesSortedByRow(boardPieces: Piece[][]) {
-    const whitePiecesCoordinatesSortedByRow =
-      this.getWhitePiecesCoordinates(boardPieces);
-
-    whitePiecesCoordinatesSortedByRow.sort((a, b) => {
-      if (a[0] > b[0]) return 1;
-      return -1;
-    });
-
-    return whitePiecesCoordinatesSortedByRow;
-  }
-
-  getWhitePiecesSortedByColumn(boardPieces: Piece[][]) {
-    const whitePiecesCoordinatesSortedByColumn =
-      this.getWhitePiecesCoordinates(boardPieces);
-
-    whitePiecesCoordinatesSortedByColumn.sort((a, b) => {
-      if (a[1] > b[1]) return 1;
-      return -1;
-    });
-
-    return whitePiecesCoordinatesSortedByColumn;
-  }
-
-  getBlackPiecesSortedByRow(boardPieces: Piece[][]) {
-    const blackPiecesCoordinatesSortedByRow =
-      this.getBlackPiecesCoordinates(boardPieces);
-
-    blackPiecesCoordinatesSortedByRow.sort((a, b) => {
-      if (a[0] > b[0]) return 1;
-      return -1;
-    });
-
-    return blackPiecesCoordinatesSortedByRow;
-  }
-
-  getBlackPiecesSortedByColumn(boardPieces: Piece[][]) {
-    const blackPiecesCoordinatesSortedByColumn =
-      this.getBlackPiecesCoordinates(boardPieces);
-
-    blackPiecesCoordinatesSortedByColumn.sort((a, b) => {
-      if (a[1] > b[1]) return 1;
-      return -1;
-    });
-
-    return blackPiecesCoordinatesSortedByColumn;
-  }
-
   getWhitePiecesCoordinates(boardPieces: Piece[][]) {
     const whitePiecesCoordinates: number[][] = [];
 
