@@ -256,6 +256,7 @@ function App() {
       changeTurn,
       updateCheckMode,
       isCheckMode,
+      turn,
     ]
   );
 
