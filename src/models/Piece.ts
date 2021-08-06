@@ -2,6 +2,7 @@ export abstract class Piece {
   public captured = false;
   public row: number;
   public column: number;
+  abstract getAvailableMoves(boardPieces: Piece[][]): number[][];
 
   constructor(
     public coordinates: number[],
