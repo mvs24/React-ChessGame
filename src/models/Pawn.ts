@@ -8,7 +8,10 @@ export class Pawn extends Piece {
       if (this.row === 6) {
         if (this.isCoordinateEmpty([this.row - 1, this.column], boardPieces))
           allMoves.push([this.row - 1, this.column]);
-        if (this.isCoordinateEmpty([this.row - 2, this.column], boardPieces))
+        if (
+          this.isCoordinateEmpty([this.row - 2, this.column], boardPieces) &&
+          !this.isCoordinateTakenByMe([this.row - 1, this.column], boardPieces)
+        )
           allMoves.push([this.row - 2, this.column]);
       } else {
         if (this.isCoordinateEmpty([this.row - 1, this.column], boardPieces))
@@ -18,7 +21,10 @@ export class Pawn extends Piece {
       if (this.row === 1) {
         if (this.isCoordinateEmpty([this.row + 1, this.column], boardPieces))
           allMoves.push([this.row + 1, this.column]);
-        if (this.isCoordinateEmpty([this.row + 2, this.column], boardPieces))
+        if (
+          this.isCoordinateEmpty([this.row + 2, this.column], boardPieces) &&
+          !this.isCoordinateTakenByMe([this.row + 1, this.column], boardPieces)
+        )
           allMoves.push([this.row + 2, this.column]);
       } else {
         if (this.isCoordinateEmpty([this.row + 1, this.column], boardPieces))

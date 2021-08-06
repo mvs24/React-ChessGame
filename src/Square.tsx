@@ -7,6 +7,7 @@ interface Props {
   onAvailableSquareClick?: (coordinates: number[]) => void;
   selected: boolean;
   isAvailableMove: boolean;
+  checkMode: boolean;
 }
 
 function Square(props: Props) {
@@ -19,6 +20,7 @@ function Square(props: Props) {
     isAvailableMove,
     selected,
     onAvailableSquareClick,
+    checkMode,
   } = props;
 
   const squareClickHandler = () => {
@@ -32,7 +34,9 @@ function Square(props: Props) {
       onClick={squareClickHandler}
       className={`square ${color} ${selected ? "selected" : ""} ${
         isAvailableMove ? "available-move" : ""
-      }`}
+      }
+      ${checkMode ? "check-mode" : ""}
+      `}
     >
       {markup && (
         <span className="piece" dangerouslySetInnerHTML={{ __html: markup }} />

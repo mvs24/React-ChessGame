@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useCallback } from "react";
+import { useEffect } from "react";
 import { useState } from "react";
 import { piecesString } from "./base";
 import { Bishop } from "./models/Bishop";
@@ -9,6 +11,9 @@ import { Piece } from "./models/Piece";
 import { Queen } from "./models/Queen";
 import { Rook } from "./models/Rook";
 import Square from "./Square";
+
+const whiteKingPiece = new King([7, 4], piecesString.whiteKing, "white");
+const blackKingPiece = new King([0, 4], piecesString.blackKing, "black");
 
 const generatePieces = () => {
   const board: Piece[][] = new Array(8).fill(0).map(() => []);
@@ -24,7 +29,7 @@ const generatePieces = () => {
   board[0][2] = new Bishop([0, 2], piecesString.blackBishop, "black");
   board[0][5] = new Bishop([0, 5], piecesString.blackBishop, "black");
   board[0][3] = new Queen([0, 3], piecesString.blackQueen, "black");
-  board[0][4] = new King([0, 4], piecesString.blackKing, "black");
+  board[0][4] = blackKingPiece;
 
   board[7][0] = new Rook([7, 0], piecesString.whiteRook, "white");
   board[7][7] = new Rook([7, 7], piecesString.whiteRook, "white");
@@ -33,7 +38,7 @@ const generatePieces = () => {
   board[7][2] = new Bishop([7, 2], piecesString.whiteBishop, "white");
   board[7][5] = new Bishop([7, 5], piecesString.whiteBishop, "white");
   board[7][3] = new Queen([7, 3], piecesString.whiteQueen, "white");
-  board[7][4] = new King([7, 4], piecesString.whiteKing, "white");
+  board[7][4] = whiteKingPiece;
 
   for (let j = 2; j < 6; j++) board[j] = new Array(8).fill(undefined);
 
@@ -61,7 +66,8 @@ const getSquareColor: (row: number, col: number) => "white" | "black" = (
 };
 
 function App() {
-  const [boardPieces, setBoardPieces] = useState<Piece[][]>(generatePieces());
+  const allPieces = useMemo(() => generatePieces(), []);
+  const [boardPieces, setBoardPieces] = useState<Piece[][]>(allPieces);
   const [turn, setTurn] = useState<"white" | "black">("white");
   const [selectedPiece, setSelectedPiece] = useState<Piece | undefined>(
     undefined
@@ -69,6 +75,39 @@ function App() {
   const [availableMoves, setAvailableMoves] = useState<number[][] | undefined>(
     undefined
   );
+  const [checkMode, setCheckMode] = useState<{
+    whiteKing: boolean;
+    blackKing: boolean;
+    checkModeCoordinate: undefined | number[];
+  }>({
+    whiteKing: false,
+    blackKing: false,
+    checkModeCoordinate: undefined,
+  });
+  const [whiteKing, setWhiteKing] = useState<Piece>(allPieces[7][4]);
+  const [blackKing, setBlackKing] = useState<Piece>(allPieces[0][4]);
+
+  const controlIfKingWasMoved = useCallback(() => {
+    for (let i = 0; i < boardPieces.length; i++) {
+      for (let j = 0; j < boardPieces[i].length; j++) {
+        if (
+          boardPieces[i][j] === whiteKingPiece &&
+          boardPieces[i][j].row !== whiteKing.row &&
+          boardPieces[i][j].column !== whiteKing.column
+        ) {
+          setWhiteKing(boardPieces[i][j]);
+        } else if (
+          boardPieces[i][j] === blackKingPiece &&
+          boardPieces[i][j].row !== blackKing.row &&
+          boardPieces[i][j].column !== blackKing.column
+        ) {
+          setBlackKing(boardPieces[i][j]);
+        }
+      }
+    }
+  }, [boardPieces, blackKing, whiteKing]);
+
+  useEffect(controlIfKingWasMoved, [controlIfKingWasMoved]);
 
   const isAvailableMove = useCallback(
     (row: number, column: number) => {
@@ -101,6 +140,10 @@ function App() {
   const onAvailableSquareClick = useCallback(
     (coordinates: number[]) => {
       if (!selectedPiece) return;
+
+      // if (isCheckMode()) {
+      //   // TODO
+      // }
 
       const [nextRow, nextColumn] = coordinates;
 
@@ -141,6 +184,40 @@ function App() {
     [turn, boardPieces]
   );
 
+  const isCheckMode = useCallback(
+    (attackingPiece: Piece): boolean => {
+      const nextAvailableMovesForAttackingPiece =
+        attackingPiece.getAvailableMoves(boardPieces);
+
+      console.log({
+        attackingPiece,
+        nextAvailableMovesForAttackingPiece,
+        turn,
+      });
+
+      if (turn === "white") {
+        return nextAvailableMovesForAttackingPiece.some(
+          (coordinate: number[]) => {
+            return (
+              coordinate[0] === blackKing.row &&
+              coordinate[1] === blackKing.column
+            );
+          }
+        );
+      } else {
+        return nextAvailableMovesForAttackingPiece.some(
+          (coordinate: number[]) => {
+            return (
+              coordinate[0] === whiteKing.row &&
+              coordinate[1] === whiteKing.column
+            );
+          }
+        );
+      }
+    },
+    [boardPieces, turn, blackKing, whiteKing]
+  );
+
   const attackOponentPiece = useCallback(
     (oponentPieceCoordinates: number[], attackingPiece: Piece) => {
       const updatedBoardPieces = [...boardPieces];
@@ -155,12 +232,29 @@ function App() {
         oponentPieceCoordinates[1],
       ]);
 
+      if (isCheckMode(attackingPiece)) {
+        const kingInCheckModeColor = turn === "black" ? "white" : "black";
+        if (kingInCheckModeColor === "white") {
+          setCheckMode({
+            whiteKing: true,
+            blackKing: false,
+            checkModeCoordinate: [whiteKing.row, whiteKing.column],
+          });
+        } else {
+          setCheckMode({
+            whiteKing: false,
+            blackKing: true,
+            checkModeCoordinate: [blackKing.row, blackKing.column],
+          });
+        }
+      }
+
       setBoardPieces(updatedBoardPieces);
       setAvailableMoves(undefined);
       setSelectedPiece(undefined);
       changeTurn();
     },
-    [boardPieces, changeTurn]
+    [boardPieces, changeTurn, isCheckMode, whiteKing, blackKing, turn]
   );
 
   const onSquareClick = useCallback(
@@ -207,6 +301,12 @@ function App() {
           coordinates: [row, col],
           Element: () => (
             <Square
+              checkMode={
+                checkMode.checkModeCoordinate
+                  ? checkMode.checkModeCoordinate[0] === row &&
+                    checkMode.checkModeCoordinate[1] === col
+                  : false
+              }
               onAvailableSquareClick={(coordinates: number[]) =>
                 boardPieces[row][col] === undefined
                   ? onAvailableSquareClick(coordinates)
@@ -236,6 +336,7 @@ function App() {
     isAvailableMove,
     onAvailableSquareClick,
     onSquareClick,
+    checkMode,
   ]);
 
   return (
