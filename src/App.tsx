@@ -137,63 +137,27 @@ function App() {
     setTurn(turn === "white" ? "black" : "white");
   }, [turn]);
 
-  const onAvailableSquareClick = useCallback(
-    (coordinates: number[]) => {
-      if (!selectedPiece) return;
-
-      // if (isCheckMode()) {
-      //   // TODO
-      // }
-
-      const [nextRow, nextColumn] = coordinates;
-
-      if (!isAvailableMove(nextRow, nextColumn)) return;
-
-      const selectedPieceRow = selectedPiece.row;
-      const selectedPieceColumn = selectedPiece.column;
-      const updatedBoardPieces = [...boardPieces];
-
-      // @ts-ignore
-      updatedBoardPieces[selectedPieceRow][selectedPieceColumn] = undefined;
-      updatedBoardPieces[nextRow][nextColumn] = selectedPiece;
-
-      selectedPiece.setCoordinates([nextRow, nextColumn]);
-
-      setBoardPieces(updatedBoardPieces);
-      setAvailableMoves(undefined);
-      setSelectedPiece(undefined);
-      changeTurn();
-    },
-    [isAvailableMove, selectedPiece, boardPieces, changeTurn]
-  );
-
-  const isAttackingMove = useCallback(
-    (nextCoordinate: number[]) => {
-      if (
-        (turn === "white" &&
-          boardPieces[nextCoordinate[0]][nextCoordinate[1]].color ===
-            "black") ||
-        (turn === "black" &&
-          boardPieces[nextCoordinate[0]][nextCoordinate[1]].color === "white")
-      ) {
-        return true;
-      }
-
-      return false;
-    },
-    [turn, boardPieces]
-  );
+  const updateCheckMode = useCallback(() => {
+    const kingInCheckModeColor = turn === "black" ? "white" : "black";
+    if (kingInCheckModeColor === "white") {
+      setCheckMode({
+        whiteKing: true,
+        blackKing: false,
+        checkModeCoordinate: [whiteKing.row, whiteKing.column],
+      });
+    } else {
+      setCheckMode({
+        whiteKing: false,
+        blackKing: true,
+        checkModeCoordinate: [blackKing.row, blackKing.column],
+      });
+    }
+  }, [turn, whiteKing, blackKing]);
 
   const isCheckMode = useCallback(
     (attackingPiece: Piece): boolean => {
       const nextAvailableMovesForAttackingPiece =
         attackingPiece.getAvailableMoves(boardPieces);
-
-      console.log({
-        attackingPiece,
-        nextAvailableMovesForAttackingPiece,
-        turn,
-      });
 
       if (turn === "white") {
         return nextAvailableMovesForAttackingPiece.some(
@@ -218,6 +182,64 @@ function App() {
     [boardPieces, turn, blackKing, whiteKing]
   );
 
+  const onAvailableSquareClick = useCallback(
+    (coordinates: number[]) => {
+      if (!selectedPiece) return;
+
+      const [nextRow, nextColumn] = coordinates;
+
+      if (!isAvailableMove(nextRow, nextColumn)) return;
+
+      const selectedPieceRow = selectedPiece.row;
+      const selectedPieceColumn = selectedPiece.column;
+      const updatedBoardPieces = [...boardPieces];
+
+      if (selectedPiece instanceof King) {
+        selectedPiece.markKingAsMoved();
+      }
+
+      // @ts-ignore
+      updatedBoardPieces[selectedPieceRow][selectedPieceColumn] = undefined;
+      updatedBoardPieces[nextRow][nextColumn] = selectedPiece;
+
+      selectedPiece.setCoordinates([nextRow, nextColumn]);
+
+      if (isCheckMode(selectedPiece)) {
+        updateCheckMode();
+      }
+
+      setBoardPieces(updatedBoardPieces);
+      setAvailableMoves(undefined);
+      setSelectedPiece(undefined);
+      changeTurn();
+    },
+    [
+      isAvailableMove,
+      selectedPiece,
+      boardPieces,
+      changeTurn,
+      updateCheckMode,
+      isCheckMode,
+    ]
+  );
+
+  const isAttackingMove = useCallback(
+    (nextCoordinate: number[]) => {
+      if (
+        (turn === "white" &&
+          boardPieces[nextCoordinate[0]][nextCoordinate[1]].color ===
+            "black") ||
+        (turn === "black" &&
+          boardPieces[nextCoordinate[0]][nextCoordinate[1]].color === "white")
+      ) {
+        return true;
+      }
+
+      return false;
+    },
+    [turn, boardPieces]
+  );
+
   const attackOponentPiece = useCallback(
     (oponentPieceCoordinates: number[], attackingPiece: Piece) => {
       const updatedBoardPieces = [...boardPieces];
@@ -233,20 +255,7 @@ function App() {
       ]);
 
       if (isCheckMode(attackingPiece)) {
-        const kingInCheckModeColor = turn === "black" ? "white" : "black";
-        if (kingInCheckModeColor === "white") {
-          setCheckMode({
-            whiteKing: true,
-            blackKing: false,
-            checkModeCoordinate: [whiteKing.row, whiteKing.column],
-          });
-        } else {
-          setCheckMode({
-            whiteKing: false,
-            blackKing: true,
-            checkModeCoordinate: [blackKing.row, blackKing.column],
-          });
-        }
+        updateCheckMode();
       }
 
       setBoardPieces(updatedBoardPieces);
@@ -254,7 +263,7 @@ function App() {
       setSelectedPiece(undefined);
       changeTurn();
     },
-    [boardPieces, changeTurn, isCheckMode, whiteKing, blackKing, turn]
+    [boardPieces, changeTurn, isCheckMode, updateCheckMode]
   );
 
   const onSquareClick = useCallback(

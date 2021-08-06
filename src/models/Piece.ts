@@ -27,6 +27,34 @@ export abstract class Piece {
     this.setRowAndColumn();
   }
 
+  getWhitePieces(boardPieces: Piece[][]) {
+    const whitePieces: Piece[] = [];
+
+    for (let i = 0; i < boardPieces.length; i++) {
+      for (let j = 0; j < boardPieces[i].length; j++) {
+        if (boardPieces[i][j] && boardPieces[i][j].color === "white") {
+          whitePieces.push(boardPieces[i][j]);
+        }
+      }
+    }
+
+    return whitePieces;
+  }
+
+  getBlackPieces(boardPieces: Piece[][]) {
+    const blackPieces: Piece[] = [];
+
+    for (let i = 0; i < boardPieces.length; i++) {
+      for (let j = 0; j < boardPieces[i].length; j++) {
+        if (boardPieces[i][j] && boardPieces[i][j].color === "black") {
+          blackPieces.push(boardPieces[i][j]);
+        }
+      }
+    }
+
+    return blackPieces;
+  }
+
   getWhitePiecesCoordinates(boardPieces: Piece[][]) {
     const whitePiecesCoordinates: number[][] = [];
 
