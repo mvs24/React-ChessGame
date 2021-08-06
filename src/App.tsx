@@ -83,8 +83,7 @@ function App() {
 
   const isValidSelectedPiece = useCallback(
     (selectedPiece: Piece) => {
-      if (selectedPiece === undefined) {
-      }
+      if (selectedPiece === undefined) return true;
 
       if (turn === "white") {
         return selectedPiece.color === "white";
@@ -109,13 +108,12 @@ function App() {
 
       const selectedPieceRow = selectedPiece.row;
       const selectedPieceColumn = selectedPiece.column;
-
       const updatedBoardPieces = [...boardPieces];
+
       // @ts-ignore
       updatedBoardPieces[selectedPieceRow][selectedPieceColumn] = undefined;
       updatedBoardPieces[nextRow][nextColumn] = selectedPiece;
 
-      // @ts-ignore
       selectedPiece.setCoordinates([nextRow, nextColumn]);
 
       setBoardPieces(updatedBoardPieces);
@@ -126,16 +124,63 @@ function App() {
     [isAvailableMove, selectedPiece, boardPieces, changeTurn]
   );
 
+  const isAttackingMove = useCallback(
+    (nextCoordinate: number[]) => {
+      if (
+        (turn === "white" &&
+          boardPieces[nextCoordinate[0]][nextCoordinate[1]].color ===
+            "black") ||
+        (turn === "black" &&
+          boardPieces[nextCoordinate[0]][nextCoordinate[1]].color === "white")
+      ) {
+        return true;
+      }
+
+      return false;
+    },
+    [turn, boardPieces]
+  );
+
+  const attackOponentPiece = useCallback(
+    (oponentPieceCoordinates: number[], attackingPiece: Piece) => {
+      const updatedBoardPieces = [...boardPieces];
+      updatedBoardPieces[oponentPieceCoordinates[0]][
+        oponentPieceCoordinates[1]
+      ] = attackingPiece;
+      // @ts-ignore
+      updatedBoardPieces[attackingPiece.row][attackingPiece.column] = undefined;
+
+      attackingPiece.setCoordinates([
+        oponentPieceCoordinates[0],
+        oponentPieceCoordinates[1],
+      ]);
+
+      setBoardPieces(updatedBoardPieces);
+      setAvailableMoves(undefined);
+      setSelectedPiece(undefined);
+      changeTurn();
+    },
+    [boardPieces, changeTurn]
+  );
+
   const onSquareClick = useCallback(
     (coordinates: number[]) => {
       const [row, column] = coordinates;
-      const selectedPiece = boardPieces[row][column];
+      const newSelectedPiece = boardPieces[row][column];
 
-      if (isValidSelectedPiece(selectedPiece)) {
-        setSelectedPiece(selectedPiece);
+      if (
+        isAttackingMove([row, column]) &&
+        selectedPiece &&
+        isAvailableMove(row, column)
+      ) {
+        attackOponentPiece([row, column], selectedPiece);
+        return;
+      }
 
-        // @ts-ignore
-        const availableMoves = selectedPiece.getAvailableMoves(boardPieces);
+      if (isValidSelectedPiece(newSelectedPiece)) {
+        setSelectedPiece(newSelectedPiece);
+
+        const availableMoves = newSelectedPiece.getAvailableMoves(boardPieces);
         setAvailableMoves(availableMoves);
       } else {
         setTimeout(() => {
@@ -143,7 +188,14 @@ function App() {
         });
       }
     },
-    [boardPieces, isValidSelectedPiece]
+    [
+      isAvailableMove,
+      boardPieces,
+      isValidSelectedPiece,
+      selectedPiece,
+      attackOponentPiece,
+      isAttackingMove,
+    ]
   );
 
   const renderBoard = useCallback(() => {
