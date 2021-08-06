@@ -9,29 +9,40 @@ export class King extends Piece {
 
   isKingCastlingActive(boardPieces: Piece[][]): boolean {
     return (
+      !this.moved &&
       this.isCoordinateEmpty([this.row, this.column + 1], boardPieces) &&
-      this.isCoordinateEmpty([this.row, this.column + 2], boardPieces)
+      this.isCoordinateEmpty([this.row, this.column + 2], boardPieces) &&
+      !this.isCandidateCoordinateAttackedByAnyOpponentPieces(
+        [this.row, this.column + 2],
+        boardPieces
+      )
+      // && need to do the same for rook
     );
   }
 
   isQueenCastlingActive(boardPieces: Piece[][]): boolean {
     return (
+      !this.moved &&
       this.isCoordinateEmpty([this.row, this.column - 1], boardPieces) &&
       this.isCoordinateEmpty([this.row, this.column - 2], boardPieces) &&
-      this.isCoordinateEmpty([this.row, this.column - 3], boardPieces)
+      !this.isCandidateCoordinateAttackedByAnyOpponentPieces(
+        [this.row, this.column - 2],
+        boardPieces
+      )
+      // && need to do the same for rook
     );
   }
 
   getKingCastlingMove(boardPieces: Piece[][]) {
-    if (!this.moved && this.isKingCastlingActive(boardPieces))
+    if (this.isKingCastlingActive(boardPieces))
       return [this.row, this.column + 2];
 
     return [];
   }
 
   getQueenCastingMove(boardPieces: Piece[][]) {
-    if (!this.moved && this.isQueenCastlingActive(boardPieces))
-      return [this.row, this.column - 3];
+    if (this.isQueenCastlingActive(boardPieces))
+      return [this.row, this.column - 2];
 
     return [];
   }

@@ -182,6 +182,17 @@ function App() {
     [boardPieces, turn, blackKing, whiteKing]
   );
 
+  const isKingCastleMove = (
+    currentKingColumn: number,
+    nextColumn: number
+  ): boolean => {
+    return nextColumn - currentKingColumn === 2;
+  };
+
+  const isQueenCastleMove = (currentKingColumn: number, nextColumn: number) => {
+    return currentKingColumn - nextColumn === 2;
+  };
+
   const onAvailableSquareClick = useCallback(
     (coordinates: number[]) => {
       if (!selectedPiece) return;
@@ -195,6 +206,31 @@ function App() {
       const updatedBoardPieces = [...boardPieces];
 
       if (selectedPiece instanceof King) {
+        if (isKingCastleMove(selectedPiece.column, nextColumn)) {
+          // @ts-ignore
+          updatedBoardPieces[selectedPieceRow][selectedPieceColumn + 3] =
+            undefined;
+          updatedBoardPieces[selectedPieceRow][selectedPieceColumn + 1] =
+            new Rook(
+              [selectedPieceRow, selectedPieceColumn + 1],
+              turn === "white"
+                ? piecesString.whiteRook
+                : piecesString.blackRook,
+              turn
+            );
+        } else if (isQueenCastleMove(selectedPiece.column, nextColumn)) {
+          // @ts-ignore
+          updatedBoardPieces[selectedPieceRow][selectedPieceColumn - 4] =
+            undefined;
+          updatedBoardPieces[selectedPieceRow][selectedPieceColumn - 1] =
+            new Rook(
+              [selectedPieceRow, selectedPieceColumn - 1],
+              turn === "white"
+                ? piecesString.whiteRook
+                : piecesString.blackRook,
+              turn
+            );
+        }
         selectedPiece.markKingAsMoved();
       }
 
