@@ -86,6 +86,11 @@ function App() {
   });
   const [whiteKing, setWhiteKing] = useState<Piece>(allPieces[7][4]);
   const [blackKing, setBlackKing] = useState<Piece>(allPieces[0][4]);
+  const [lastPieceMoved, setLastPieceMoved] = useState<Piece | undefined>(
+    undefined
+  );
+  const [winner, setWinner] = useState<boolean>(false);
+  const [draw, setDraw] = useState<boolean>(false);
 
   const controlIfKingWasMoved = useCallback(() => {
     for (let i = 0; i < boardPieces.length; i++) {
@@ -242,12 +247,27 @@ function App() {
 
       if (isCheckMode(selectedPiece)) {
         updateCheckMode();
+        if (isCheckMate(updatedBoardPieces)) {
+          setWinner(true);
+          setTimeout(() => {
+            alert(`Player ${turn} won the game`);
+          });
+        }
       }
 
+      setLastPieceMoved(selectedPiece);
       setBoardPieces(updatedBoardPieces);
       setAvailableMoves(undefined);
       setSelectedPiece(undefined);
       changeTurn();
+
+      if (isInCheckMode() && selectedPiece instanceof King) {
+        setCheckMode({
+          whiteKing: false,
+          blackKing: false,
+          checkModeCoordinate: undefined,
+        });
+      }
     },
     [
       isAvailableMove,
@@ -295,6 +315,7 @@ function App() {
         updateCheckMode();
       }
 
+      setLastPieceMoved(attackingPiece);
       setBoardPieces(updatedBoardPieces);
       setAvailableMoves(undefined);
       setSelectedPiece(undefined);
@@ -303,29 +324,133 @@ function App() {
     [boardPieces, changeTurn, isCheckMode, updateCheckMode]
   );
 
-  const onSquareClick = useCallback(
-    (coordinates: number[]) => {
-      const [row, column] = coordinates;
-      const newSelectedPiece = boardPieces[row][column];
+  const isInCheckMode = () => {
+    if (turn === "white") {
+      return checkMode.whiteKing;
+    }
+    return checkMode.blackKing;
+  };
 
-      if (
-        isAttackingMove([row, column]) &&
-        selectedPiece &&
-        isAvailableMove(row, column)
-      ) {
-        attackOponentPiece([row, column], selectedPiece);
-        return;
+  const isCheckMate = function (boardPieces: Piece[][]) {
+    if (turn === "white") {
+      return blackKingPiece.getAvailableMoves(boardPieces).length === 0;
+    } else {
+      return whiteKingPiece.getAvailableMoves(boardPieces).length === 0;
+    }
+  };
+
+  const updateAvailableMovesOnCheckMode = (newSelectedPiece: Piece) => {
+    if (!lastPieceMoved) return;
+    const [lastPieceMovedRow, lastPieceMovedColumn] =
+      lastPieceMoved.coordinates;
+
+    const turnPieces: Piece[] = [];
+
+    for (let row = 0; row < boardPieces.length; row++) {
+      for (let column = 0; column < boardPieces[row].length; column++) {
+        if (boardPieces[row][column]?.color === turn) {
+          turnPieces.push(boardPieces[row][column]);
+        }
       }
+    }
 
+    const activePiecesWhoCanMoveOnCheckMode: Piece[] = [];
+    if (turn === "white") {
+      activePiecesWhoCanMoveOnCheckMode.push(whiteKingPiece);
+    } else {
+      activePiecesWhoCanMoveOnCheckMode.push(blackKingPiece);
+    }
+
+    turnPieces.forEach((piece: Piece) => {
+      const pieceAvailableMoves = piece.getAvailableMoves(boardPieces);
+      if (
+        pieceAvailableMoves.some((coordinate: number[]) => {
+          return (
+            coordinate[0] === lastPieceMovedRow &&
+            coordinate[1] === lastPieceMovedColumn
+          );
+        })
+      ) {
+        activePiecesWhoCanMoveOnCheckMode.push(piece);
+      }
+    });
+
+    if (
+      activePiecesWhoCanMoveOnCheckMode.some(
+        (piece: Piece) => piece === newSelectedPiece
+      )
+    ) {
       if (isValidSelectedPiece(newSelectedPiece)) {
         setSelectedPiece(newSelectedPiece);
 
-        const availableMoves = newSelectedPiece.getAvailableMoves(boardPieces);
+        let availableMoves = newSelectedPiece.getAvailableMoves(boardPieces);
+
+        if (newSelectedPiece instanceof King === false) {
+          availableMoves = availableMoves.filter((coordinate: number[]) => {
+            return (
+              coordinate[0] === lastPieceMoved.row &&
+              coordinate[1] === lastPieceMoved.column
+            );
+          });
+        }
+
         setAvailableMoves(availableMoves);
+      }
+    }
+  };
+
+  const onSquareClick = useCallback(
+    (coordinates: number[]) => {
+      if (winner) return;
+
+      const [row, column] = coordinates;
+      const newSelectedPiece = boardPieces[row][column];
+      let isUnderCheckModeMove = false;
+
+      if (isInCheckMode()) {
+        isUnderCheckModeMove = true;
+
+        updateAvailableMovesOnCheckMode(newSelectedPiece);
+      }
+
+      if (isUnderCheckModeMove) {
+        if (
+          isAttackingMove([row, column]) &&
+          lastPieceMoved &&
+          selectedPiece &&
+          isAvailableMove(row, column)
+        ) {
+          attackOponentPiece([row, column], selectedPiece);
+          setCheckMode({
+            whiteKing: false,
+            blackKing: false,
+            checkModeCoordinate: undefined,
+          });
+          return;
+        } else if (newSelectedPiece instanceof King) {
+          return;
+        }
       } else {
-        setTimeout(() => {
-          alert("Not access for that piece");
-        });
+        if (
+          isAttackingMove([row, column]) &&
+          selectedPiece &&
+          isAvailableMove(row, column)
+        ) {
+          attackOponentPiece([row, column], selectedPiece);
+          return;
+        }
+
+        if (isValidSelectedPiece(newSelectedPiece)) {
+          setSelectedPiece(newSelectedPiece);
+
+          const availableMoves =
+            newSelectedPiece.getAvailableMoves(boardPieces);
+          setAvailableMoves(availableMoves);
+        } else {
+          setTimeout(() => {
+            alert("Not access for that piece");
+          });
+        }
       }
     },
     [
@@ -335,6 +460,7 @@ function App() {
       selectedPiece,
       attackOponentPiece,
       isAttackingMove,
+      checkMode,
     ]
   );
 

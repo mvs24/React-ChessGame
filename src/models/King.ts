@@ -91,7 +91,9 @@ export class King extends Piece {
     const kingCastlingMove = this.getKingCastlingMove(boardPieces);
     const queenCastlingMove = this.getQueenCastingMove(boardPieces);
 
-    const availableMoves = [kingCastlingMove, queenCastlingMove];
+    const availableMoves = [kingCastlingMove, queenCastlingMove].filter(
+      (move) => move.length > 0
+    );
     const candidateCoordinates = [
       [this.row + 1, this.column],
       [this.row - 1, this.column],
